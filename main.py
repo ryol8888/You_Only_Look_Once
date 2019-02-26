@@ -26,6 +26,7 @@ parser.add_argument('--use_wandb', type=lambda x: (str(x).lower() == 'true'), he
 parser.add_argument('--use_summary', type=lambda x: (str(x).lower() == 'true'), help='descripte Model summary', default=True)
 parser.add_argument('--use_gtcheck', type=lambda x: (str(x).lower() == 'true'), help='Ground Truth check flag', default=False)
 parser.add_argument('--use_githash', type=lambda x: (str(x).lower() == 'true'), help='use githash to checkpoint', default=False)
+parser.add_argument('--datalist', type=lambda x: (str(x).lower() == 'true'), help='use dataset list to train', default=False)
 
 # develop
 parser.add_argument('--num_class', type=int, help='number of class', default=5, required=True)
@@ -54,7 +55,8 @@ def main():
 
         "num_class": args.num_class,
         "use_gtcheck": args.use_gtcheck,
-        "use_githash": args.use_githash
+        "use_githash": args.use_githash,
+        "use_datalist": args.datalist,
     }
 
     if params["mode"] == "train":

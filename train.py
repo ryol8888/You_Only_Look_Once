@@ -51,6 +51,7 @@ def train(params):
     USE_GTCHECKER = params["use_gtcheck"]
 
     USE_GITHASH = params["use_githash"]
+    USE_DATALIST = params["use_datalist"]
     num_class = params["num_class"]
 
     if (USE_WANDB):
@@ -99,7 +100,11 @@ def train(params):
     # 3. Load Dataset
     # composed
     # transforms.ToTensor
-    train_dataset = VOC(root=data_path, transform=composed, class_path=class_path)
+    if (USE_DATALIST):
+        #TODO : Datalist가 있을때 VOC parsing
+        train_dataset = VOC(root=data_path, transform=composed, class_path=class_path)
+    else:
+        train_dataset = VOC(root=data_path, transform=composed, class_path=class_path)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,
