@@ -93,21 +93,29 @@ class VOC(data.Dataset):
     LABEL_FOLDER = "Annotations"
     IMG_EXTENSIONS = '.jpg'
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, resize=448, class_path='./voc.names'):
+    def __init__(self, root, train=True, transform=None, target_transform=None, resize=448, class_path='./voc.names', datalist_path='./'):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
         self.train = train
         self.resize_factor = resize
         self.class_path = class_path
-
+        self.datalist_path = datalist_path
+        self.useDatalist = False
         with open(class_path) as f:
             self.classes = f.read().splitlines()
 
         if not self._check_exists():
             raise RuntimeError("Dataset not found.")
-
-        self.data = self.cvtData()
+        if not datalist_path == './':
+            self.useDatalist = True
+        if (self.useDatalist):
+            if not(os.path.isfile(datalist_path)):
+                raise RuntimeError("Datalist path is not correct")
+            self.data = self.cvtData()
+            
+        else:
+            self.data = self.cvtData()
 
     def _check_exists(self):
         print("Image Folder : {}".format(os.path.join(self.root, self.IMAGE_FOLDER)))
@@ -115,14 +123,13 @@ class VOC(data.Dataset):
 
         return os.path.exists(os.path.join(self.root, self.IMAGE_FOLDER)) and \
                os.path.exists(os.path.join(self.root, self.LABEL_FOLDER))
-
     def cvtData(self):
 
         result = []
         voc = cvtVOC()
 
         yolo = cvtYOLO(os.path.abspath(self.class_path))
-        flag, self.dict_data = voc.parse(os.path.join(self.root, self.LABEL_FOLDER))
+        flag, self.dict_data = voc.parse(os.path.join(self.root, self.LABEL_FOLDER),self.useDatalist,self.datalist_path)
         '''
         #TODO : 학습할 Data list가 있는 *.txt파일을 읽어서 함수parse(in Format.py) 인자 filenames에 집어넣어야 됨.
         '''

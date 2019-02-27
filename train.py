@@ -36,6 +36,7 @@ def train(params):
     input_width = params["input_width"]
 
     data_path = params["data_path"]
+    datalist_path = params["datalist_path"]
     class_path = params["class_path"]
     batch_size = params["batch_size"]
     num_epochs = params["num_epochs"]
@@ -51,9 +52,8 @@ def train(params):
     USE_GTCHECKER = params["use_gtcheck"]
 
     USE_GITHASH = params["use_githash"]
-    USE_DATALIST = params["use_datalist"]
     num_class = params["num_class"]
-
+    
     if (USE_WANDB):
         wandb.init()
         wandb.config.update(params)  # adds all of the arguments as config variables
@@ -100,11 +100,8 @@ def train(params):
     # 3. Load Dataset
     # composed
     # transforms.ToTensor
-    if (USE_DATALIST):
-        #TODO : Datalist가 있을때 VOC parsing
-        train_dataset = VOC(root=data_path, transform=composed, class_path=class_path)
-    else:
-        train_dataset = VOC(root=data_path, transform=composed, class_path=class_path)
+    #TODO : Datalist가 있을때 VOC parsing
+    train_dataset = VOC(root=data_path, transform=composed, class_path=class_path, datalist_path=datalist_path)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,

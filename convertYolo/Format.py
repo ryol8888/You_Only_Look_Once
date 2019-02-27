@@ -220,10 +220,17 @@ class VOC:
             return False, msg
 
     @staticmethod
-    def parse(path):
+    def parse(path,useDataList=False,datalist_path='./'):
         try:
-
-            (dir_path, dir_names, filenames) = next(os.walk(os.path.abspath(path)))
+            if(useDataList):
+                dir_path = next(os.walk(os.path.abspath(path)))[0]
+                dir_names = next(os.walk(os.path.abspath(path)))[1]
+                with open(datalist_path) as f:
+                    filenames = f.read().splitlines()
+                for idx in range(len(filenames)):
+                    filenames[idx] += '.xml'
+            else:
+                (dir_path, dir_names, filenames) = next(os.walk(os.path.abspath(path)))
 
             data = {}
             progress_length = len(filenames)
@@ -292,6 +299,7 @@ class VOC:
             msg = "ERROR : {}, moreInfo : {}\t{}\t{}".format(e, exc_type, fname, exc_tb.tb_lineno)
 
             return False, msg
+
 
 
 class COCO:
