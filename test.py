@@ -5,6 +5,7 @@ import torch
 import yolov1
 import matplotlib.pyplot as plt
 import numpy as np
+import io
 
 from torchvision import transforms
 from torchsummary.torchsummary import summary
@@ -19,6 +20,7 @@ def test(params):
     input_width = params["input_width"]
 
     data_path = params["data_path"]
+    datalist_path = params["datalist_path"]
     class_path = params["class_path"]
     num_gpus = [i for i in range(params["num_gpus"])]
     checkpoint_path = params["checkpoint_path"]
@@ -49,6 +51,16 @@ def test(params):
     if USE_SUMMARY:
         summary(model, (3, 448, 448))
 
+    if not (datalist_path =='./'):
+        root = next(os.walk(os.path.abspath(data_path)))[0]
+        dir = next(os.walk(os.path.abspath(data_path)))[1]
+        files =[]
+        with io.open(datalist_path,encoding='utf8') as f:
+            for i in f.readlines():
+                files.append(i.splitlines()[0])
+            
+        for idx in range(len(files)):
+            files[idx] += '.jpg'
     image_path = os.path.join(data_path, "JPEGImages")
     root, dir, files = next(os.walk(os.path.abspath(image_path)))
 
