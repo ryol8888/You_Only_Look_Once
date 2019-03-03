@@ -186,7 +186,7 @@ def train(params):
             short_sha = 'noHash'
 
         # if ((epoch % 1000) == 0) and (epoch != 0):
-        if ((epoch % 1000) == 0):
+        if ((epoch % 40) == 0):
             save_checkpoint({
                 'epoch': epoch + 1,
                 'arch': "YOLOv1",
