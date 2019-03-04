@@ -132,18 +132,18 @@ class YOLOv1(nn.Module):
             nn.BatchNorm2d(1024, momentum=0.01),
             nn.LeakyReLU())
         self.layer24 = nn.Sequential(
-            nn.Conv2d(1024, 1024, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(1024, momentum=0.01),
+            nn.Conv2d(1024, 256, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(256, momentum=0.01),
             nn.LeakyReLU())
 
         self.fc1 = nn.Sequential(
-            nn.Linear(7 * 7 * 1024, 4096),
+            nn.Linear(7 * 7 * 256, 512),
             nn.LeakyReLU(),
             nn.Dropout(self.dropout_prop)
         )
 
         self.fc2 = nn.Sequential(
-            nn.Linear(4096, 7 * 7 * ((self.bounding_boxes) + self.num_classes))
+            nn.Linear(512, 7 * 7 * ((self.bounding_boxes) + self.num_classes))
         )
 
         for m in self.modules():
