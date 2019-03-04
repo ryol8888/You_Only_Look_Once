@@ -205,6 +205,7 @@ def detection_loss_4_yolo(output, target, device):
 
     # output tensor slice
     # output tensor shape is [batch, 7, 7, bounding_boxes + classes]
+    '''
     objness1_output = output[:, :, :, 0]
     x_offset1_output = output[:, :, :, 1]
     y_offset1_output = output[:, :, :, 2]
@@ -215,21 +216,82 @@ def detection_loss_4_yolo(output, target, device):
     y_offset2_output = output[:, :, :, 7]
     width_ratio2_output = output[:, :, :, 8]
     height_ratio2_output = output[:, :, :, 9]
-    class_output = output[:, :, :, 10:] # 10 = bounding_boxes
+    '''
     pred_bbox = output[:, :, :, :9]
+    class_output = output[:, :, :, 10:] # 10 = bounding_boxes
     num_cls = class_output.shape[-1]
-
+    '''
     # label tensor slice
     objness_label = target[:, :, :, 0]
     x_offset_label = target[:, :, :, 1]
     y_offset_label = target[:, :, :, 2]
     width_ratio_label = target[:, :, :, 3]
     height_ratio_label = target[:, :, :, 4]
+    '''
+    true_bbox = target[:, :, :, :5]
     class_label = one_hot(class_output, target[:, :, :, 5], device) # 5 = bounding_boxes
-    true_bbox = target[:, :, :, :4]
+
+    no_obj_bbox = torch.zeros(1,5,dtype=true_bbox.dtype)
     
-    for i in range(b):
-        making_shape_completely(output[i],target[i])
+    ratio = torch.zeros(output.size(),dtype=output.dtype)
+    ratio_nobj = torch.tensor([[lambda_noobj,0,0,0,0]],dtype=true_bbox.dtype)
+    ratio_obj = torch.tensor([[1,lambda_coord,lambda_coord,lambda_coord,lambda_coord]],dtype=true_bbox.dtype)
+    ratio_ncls = torch.zeros(1,20,dtype=true_bbox.dtype)
+    ratio_cls = torch.ones(20,dtype=true_bbox.dtype)
+
+    label = torch.zeros(output.size(),dtype=output.dtype) #이미 no_obj_bbox 세팅 되어있음
+
+    
+    non_zero = (target[:, :, :, 0]==1).nonzero()
+    '''
+    pred_bbox1 : coord_obj의 예측값1
+    pred_bbox2 : coord_obj의 예측값2
+    shape = [1,5]
+    '''
+    pred_bbox1 = output[non_zero[:,0],non_zero[:,1],non_zero[:,2], 0:5]
+    pred_bbox2 = output[non_zero[:,0],non_zero[:,1],non_zero[:,2], 5:10]
+    coor_true_bbox = true_bbox[non_zero[:,0],non_zero[:,1],non_zero[:,2], :]
+
+    pred_bbox1_np = pred_bbox1.cpu().data.numpy()
+    pred_bbox2_np = pred_bbox2.cpu().data.numpy()
+    coor_true_bbox_np = coor_true_bbox.cpu().data.numpy()
+
+    num_object, _ = coor_true_bbox.shape
+
+    for i in range(num_object):
+
+        pred_bbox1_center_x = ( 1 + pred_bbox1_np[i,1] )*448 // 7 
+        pred_bbox1_center_y = ( 1 + pred_bbox1_np[i,2] )*448 // 7
+        pred_bbox1_x_min =  pred_bbox1_center_x - ( 448*pred_bbox1_np[i,2] // 2 )
+        pred_bbox1_x_max =  pred_bbox1_center_x + ( 448*pred_bbox1_np[i,2] // 2 )
+        pred_bbox1_y_min =  pred_bbox1_center_y - ( 448*pred_bbox1_np[i,3] // 2 )
+        pred_bbox1_y_max =  pred_bbox1_center_y + ( 448*pred_bbox1_np[i,3] // 2 )
+
+        pred_bbox2_center_x = ( 1 + pred_bbox2_np[i,1] )*448 // 7 
+        pred_bbox2_center_y = ( 1 + pred_bbox2_np[i,2] )*448 // 7
+        pred_bbox2_x_min =  pred_bbox2_center_x - ( 448*pred_bbox2_np[i,2] // 2 )
+        pred_bbox2_x_max =  pred_bbox2_center_x + ( 448*pred_bbox2_np[i,2] // 2 )
+        pred_bbox2_y_min =  pred_bbox2_center_y - ( 448*pred_bbox2_np[i,3] // 2 )
+        pred_bbox2_y_max =  pred_bbox2_center_y + ( 448*pred_bbox2_np[i,3] // 2 )
+
+        coor_tbbox_center_x = ( 1 + coor_true_bbox_np[i,1] )*448 // 7 
+        coor_tbbox_center_y = ( 1 + coor_true_bbox_np[i,2] )*448 // 7
+        coor_tbbox_x_min =  coor_tbbox_center_x - ( 448*coor_true_bbox_np[i,2] // 2 )
+        coor_tbbox_x_max =  coor_tbbox_center_x + ( 448*coor_true_bbox_np[i,2] // 2 )
+        coor_tbbox_y_min =  coor_tbbox_center_y - ( 448*coor_true_bbox_np[i,3] // 2 )
+        coor_tbbox_y_max =  coor_tbbox_center_y + ( 448*coor_true_bbox_np[i,3] // 2 )
+
+        if(compute_iou( coor_tbbox_x_min, coor_tbbox_x_max, coor_tbbox_y_min, coor_tbbox_y_max, 
+                           pred_bbox1_x_min, pred_bbox1_x_max, pred_bbox1_y_min, pred_bbox1_y_max) >= compute_iou
+                           ( coor_tbbox_x_min, coor_tbbox_x_max, coor_tbbox_y_min, coor_tbbox_y_max, 
+                           pred_bbox2_x_min, pred_bbox2_x_max, pred_bbox2_y_min, pred_bbox2_y_max)):
+            label[non_zero[i,0],non_zero[i,1],non_zero[i,2],:5] = pred_bbox1[i,:]
+        else:
+            label[non_zero[i,0],non_zero[i,1],non_zero[i,2],:5] = pred_bbox2[i,:]
+
+    print(label[non_zero[0,0],non_zero[0,1],non_zero[0,2],:5])
+    print(pred_bbox1[0,:])
+    print(pred_bbox2[0,:])
 
     noobjness_label = torch.neg(torch.add(objness_label, -1))
 
@@ -266,14 +328,29 @@ def detection_loss_4_yolo(output, target, device):
 
     return total_loss, obj_coord_loss / b, obj_size_loss / b, obj_class_loss / b, noobjness_loss / b, objness_loss / b
 def making_shape_completely(output,target):
-    #output.shape = 7 x 7 x 10
-    #target.shape = 7 x 7 x 5
+    #output.shape = batch size x 7 x 7 x 10
+    #target.shape = batch size x 7 x 7 x 5
+    batch_size, _, _, _ = output.shape
+    obj_label = target[:, :, :, 0]
+    obj_label = obj_label.view(batch_size,-1) # shape = batch_size x 49 , float tensor
 
-    obj_label = target[:, :, 0]
-    obj_label = obj_label.view(-1) # shape = 49 , float tensor
-    s, _ = obj_label.shape()
-    for i in range(s):
-        pass
+    for idx in range(batch_size):
+        non_zero = obj_label[idx].nonzero()
 
-def which_is_bigger_iou(output,target):
-    pass
+    
+    return 0
+def compute_iou(truexmin, truexmax, trueymin, trueymax , predboxxmin, predboxxmax, predboxymin, predboxymax):    
+    
+    pred_bbox_area = (predboxxmax - predboxxmin + 1) * (predboxymax - predboxymin + 1)
+    true_bbox_area = (truexmax - truexmin + 1) * (trueymax - trueymin + 1)
+    
+    inter_x_min = max(truexmin, predboxxmin)
+    inter_y_min = max(trueymin, predboxymin)        
+    inter_x_max = min(truexmax, predboxxmax)        
+    inter_y_max = min(trueymax, predboxymax)         
+
+    inter_area = max(0,inter_x_max - inter_x_min + 1) * max(0,inter_y_max - inter_y_min + 1)
+
+    iou = inter_area / float(pred_bbox_area + true_bbox_area - inter_area)
+
+    return iou
