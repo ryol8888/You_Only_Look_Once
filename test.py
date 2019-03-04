@@ -32,8 +32,8 @@ def test(params):
     with open(class_path) as f:
         class_list = f.read().splitlines()
 
-    objness_threshold = 0.5
-    class_threshold = 0.9
+    objness_threshold = 0.9
+    class_threshold = 0.6
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -100,7 +100,7 @@ def test(params):
 
         objness1 = outputs[:, :, 0].unsqueeze(-1).cpu().data.numpy()
         objness2 = outputs[:, :, 5].unsqueeze(-1).cpu().data.numpy()
-
+        
         cls_map = outputs[:, :, 10:].cpu().data.numpy()
 
 
@@ -111,8 +111,9 @@ def test(params):
         objness = np.stack([objness1,objness2],axis=2)
         objness = objness.reshape(7, 7, 2)
 
-        print("obj : {}".format(objness.shape))
-        print("cls : {}".format(cls_map.shape))
+        #print("obj1 : ",objness1[:][:])
+        #print("obj2 : ",objness2[:][:])
+        #print("cls :",cls_map[:][:])
 
         print("OBJECTNESS : {}".format(objness.shape))
         print("\n\n\n")
@@ -120,7 +121,7 @@ def test(params):
         print(cls_map[0])
         print("\n\n\n")
         print("MULTIPLICATION : {}".format(threshold_map.shape))
-        print(threshold_map[:, :, 0])
+        print(threshold_map[0, :, :,14],threshold_map[0, :, :,11])
         print("\n\n\n")
 
         print("IMAGE SIZE")

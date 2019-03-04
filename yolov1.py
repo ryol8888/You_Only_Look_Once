@@ -184,6 +184,7 @@ class YOLOv1(nn.Module):
         out = self.fc2(out)
         out = out.reshape((-1, 7, 7, ((self.bounding_boxes) + self.num_classes)))
         out[:, :, :, 0] = torch.sigmoid(out[:, :, :, 0])  # sigmoid to objness1_output
+        out[:, :, :, 5] = torch.sigmoid(out[:, :, :, 5])  # sigmoid to objness2_output
         out[:, :, :, self.bounding_boxes:] = torch.sigmoid(out[:, :, :, self.bounding_boxes:])  # sigmoid to class_output
 
         return out
@@ -215,7 +216,7 @@ def detection_loss_4_yolo(output, target, device):
     width_ratio2_output = output[:, :, :, 8]
     height_ratio2_output = output[:, :, :, 9]
     class_output = output[:, :, :, 10:] # 10 = bounding_boxes
-
+    pred_bbox = output[:, :, :, :9]
     num_cls = class_output.shape[-1]
 
     # label tensor slice
@@ -225,6 +226,10 @@ def detection_loss_4_yolo(output, target, device):
     width_ratio_label = target[:, :, :, 3]
     height_ratio_label = target[:, :, :, 4]
     class_label = one_hot(class_output, target[:, :, :, 5], device) # 5 = bounding_boxes
+    true_bbox = target[:, :, :, :4]
+    
+    for i in range(b):
+        making_shape_completely(output[i],target[i])
 
     noobjness_label = torch.neg(torch.add(objness_label, -1))
 
@@ -260,3 +265,15 @@ def detection_loss_4_yolo(output, target, device):
     total_loss = total_loss / b
 
     return total_loss, obj_coord_loss / b, obj_size_loss / b, obj_class_loss / b, noobjness_loss / b, objness_loss / b
+def making_shape_completely(output,target):
+    #output.shape = 7 x 7 x 10
+    #target.shape = 7 x 7 x 5
+
+    obj_label = target[:, :, 0]
+    obj_label = obj_label.view(-1) # shape = 49 , float tensor
+    s, _ = obj_label.shape()
+    for i in range(s):
+        pass
+
+def which_is_bigger_iou(output,target):
+    pass
