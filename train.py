@@ -145,7 +145,6 @@ def train(params):
 
             images = images.to(device)
             labels = labels.to(device)
-
             # Forward pass
             outputs = model(images)
 
@@ -155,20 +154,21 @@ def train(params):
             obj_size1_loss, \
             obj_class_loss, \
             noobjness1_loss, \
-            objness1_loss = detection_loss_4_yolo(outputs, labels, device.type)
+            objness1_loss, \
+            one_loss     = detection_loss_4_yolo(outputs, labels, device.type)
             # objness1_loss = detection_loss_4_yolo(outputs, labels)
 
             # Backward and optimize
             optimizer.zero_grad()
-            loss.backward()
+            one_loss.backward()
             optimizer.step()
 
             if (((current_train_step) % 100) == 0) or (current_train_step % 10 == 0 and current_train_step < 100):
                 print(
-                    'epoch: [{}/{}], total step: [{}/{}], batch step [{}/{}], lr: {}, total_loss: {:.4f}, coord1: {:.4f}, size1: {:.4f}, noobj_clss: {:.4f}, objness1: {:.4f}, class_loss: {:.4f}'
+                    'epoch: [{}/{}], total step: [{}/{}], batch step [{}/{}], lr: {}, total_loss: {:.4f}, coord1: {:.4f}, size1: {:.4f}, noobj_clss: {:.4f}, objness1: {:.4f}, class_loss: {:.4f}, one_loss: {:.4f}'
                     .format(epoch + 1, num_epochs, current_train_step, total_train_step, i + 1, total_step,
                             ([param_group['lr'] for param_group in optimizer.param_groups])[0],
-                            loss.item(), obj_coord1_loss, obj_size1_loss, noobjness1_loss, objness1_loss, obj_class_loss))
+                            loss.item(), obj_coord1_loss, obj_size1_loss, noobjness1_loss, objness1_loss, obj_class_loss, one_loss))
 
                 if USE_VISDOM:
                     update_vis_plot(viz, (epoch + 1) * total_step + (i + 1), loss.item(), iter_plot, None, 'append')
@@ -186,7 +186,7 @@ def train(params):
             short_sha = 'noHash'
 
         # if ((epoch % 1000) == 0) and (epoch != 0):
-        if ((epoch % 500) == 0):
+        if ((epoch % 500) == 0) and one_loss <= 0.2:
             save_checkpoint({
                 'epoch': epoch + 1,
                 'arch': "YOLOv1",

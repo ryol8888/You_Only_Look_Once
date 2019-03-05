@@ -130,9 +130,6 @@ class VOC(data.Dataset):
 
         yolo = cvtYOLO(os.path.abspath(self.class_path))
         flag, self.dict_data = voc.parse(os.path.join(self.root, self.LABEL_FOLDER),self.useDatalist,self.datalist_path)
-        '''
-        #TODO : 학습할 Data list가 있는 *.txt파일을 읽어서 함수parse(in Format.py) 인자 filenames에 집어넣어야 됨.
-        '''
 
         try:
 

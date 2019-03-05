@@ -32,8 +32,8 @@ def test(params):
     with open(class_path) as f:
         class_list = f.read().splitlines()
 
-    objness_threshold = 0.9
-    class_threshold = 0.6
+    objness_threshold = 0.5
+    class_threshold = 0.3
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -56,7 +56,7 @@ def test(params):
     if not (datalist_path =='./'):
         root = next(os.walk(os.path.abspath(data_path)))[0]
         dir = next(os.walk(os.path.abspath(data_path)))[1]
-        files =['000001']
+        files =['000003']#,'000002','000003','000004']#,'000005','000006','000007','000008','000009',]
         #with io.open(datalist_path,encoding='utf8') as f:
         #    for i in f.readlines():
         #        files.append(i.splitlines()[0])
@@ -130,34 +130,68 @@ def test(params):
         print("outputs_np : {}".format(outputs_np.shape))
 
         try:
-
             for i in range(7):
                 for j in range(7):
-                    for k in range(2):
-                        draw.rectangle(((dx * i, dy * j), (dx * i + dx, dy * j + dy)), outline='#00ff88')
-                        if objness[i][j][k] >= objness_threshold:
-                            block = outputs_np[i][j]
-                            x_start_point = dx * i
-                            y_start_point = dy * j
-                            x_shift = block[k+1]
-                            y_shift = block[k+2]
-                            center_x = int((block[k+1] * W / 7.0) + (i * W / 7.0))
-                            center_y = int((block[k+2] * H / 7.0) + (j * H / 7.0))
-                            w_ratio = block[k+3]
-                            h_ratio = block[k+4]
-                            w_ratio = w_ratio * w_ratio
-                            h_ratio = h_ratio * h_ratio
-                            width = int(w_ratio * W)
-                            height = int(h_ratio * H)
-                            xmin = center_x - (width // 2)
-                            ymin = center_y - (height // 2)
-                            xmax = xmin + width
-                            ymax = ymin + height
-                            clsprob = block[10:] * objness[i][j][k]
-                            cls_idx = np.argmax(clsprob)
-                            if clsprob[cls_idx] > class_threshold:
+                    draw.rectangle(((dx * i, dy * j), (dx * i + dx, dy * j + dy)), outline='#00ff88')
+                    one = objness[i][j][0]
+                    two = objness[i][j][1]
+                    one_block = outputs_np[i][j][:5]
+                    two_block = outputs_np[i][j][5:10]
+                    class_block = outputs_np[i][j][10:]
+                    one_clsprob = class_block * one
+                    two_clsprob = class_block * two
+                    one_cls_idx = np.argmax(one_clsprob)
+                    two_cls_idx = np.argmax(two_clsprob)
+
+                    if  one >= objness_threshold:
+                        x_start_point = dx * i
+                        y_start_point = dy * j
+                        x_shift = one_block[1]
+                        y_shift = one_block[2]
+                        center_x = int((one_block[1] * W / 7.0) + (i * W / 7.0))
+                        center_y = int((one_block[2] * H / 7.0) + (j * H / 7.0))
+                        w_ratio = one_block[3]
+                        h_ratio = one_block[4]
+                        w_ratio = w_ratio * w_ratio
+                        h_ratio = h_ratio * h_ratio
+                        width = int(w_ratio * W)
+                        height = int(h_ratio * H)
+                        xmin = center_x - (width // 2)
+                        ymin = center_y - (height // 2)
+                        xmax = xmin + width
+                        ymax = ymin + height
+                        if(i==3 and j==3):
+                            print('person')
+                        if one_clsprob[one_cls_idx] > class_threshold:
+                            if (one_cls_idx == two_cls_idx) and (one_clsprob[one_cls_idx] >= two_clsprob[two_cls_idx]):
                                 draw.rectangle(((xmin + 2, ymin + 2), (xmax - 2, ymax - 2)), outline="blue")
-                                draw.text((xmin + 5, ymin + 5), "{}: {:.2f}".format(class_list[cls_idx], clsprob[cls_idx]))
+                                draw.text((xmin + 5, ymin + 5), "{}: {:.2f}".format(class_list[one_cls_idx], one_clsprob[one_cls_idx]))
+                                draw.ellipse(((center_x - 2, center_y - 2),
+                                              (center_x + 2, center_y + 2)),
+                                             fill='blue')
+
+                    if  two >= objness_threshold:
+                        x_start_point = dx * i
+                        y_start_point = dy * j
+                        x_shift = two_block[1]
+                        y_shift = two_block[2]
+                        center_x = int((two_block[1] * W / 7.0) + (i * W / 7.0))
+                        center_y = int((two_block[2] * H / 7.0) + (j * H / 7.0))
+                        w_ratio = two_block[3]
+                        h_ratio = two_block[4]
+                        w_ratio = w_ratio * w_ratio
+                        h_ratio = h_ratio * h_ratio
+                        width = int(w_ratio * W)
+                        height = int(h_ratio * H)
+                        xmin = center_x - (width // 2)
+                        ymin = center_y - (height // 2)
+                        xmax = xmin + width
+                        ymax = ymin + height
+                        
+                        if two_clsprob[two_cls_idx] > class_threshold:
+                            if (one_cls_idx == two_cls_idx) and (one_clsprob[one_cls_idx] < two_clsprob[two_cls_idx]):
+                                draw.rectangle(((xmin + 2, ymin + 2), (xmax - 2, ymax - 2)), outline="blue")
+                                draw.text((xmin + 5, ymin + 5), "{}: {:.2f}".format(class_list[two_cls_idx], two_clsprob[two_cls_idx]))
                                 draw.ellipse(((center_x - 2, center_y - 2),
                                               (center_x + 2, center_y + 2)),
                                              fill='blue')
