@@ -220,9 +220,10 @@ def detection_loss_4_yolo(output, target, device):
     pred_bbox = output[:, :, :, :9]
     class_output = output[:, :, :, 10:] # 10 = bounding_boxes
     num_cls = class_output.shape[-1]
+    non_zero = (target[:, :, :, 0]==1).nonzero()
 
     true_bbox = target[:, :, :, :5]
-    class_label = one_hot(class_output, target[:, :, :, 5], device) # 5 = bounding_boxes
+    class_label = one_hot(class_output, target[:, :, :, 5],non_zero, device) # 5 = bounding_boxes
 
     no_obj_bbox = torch.zeros(1,5,dtype=true_bbox.dtype,device=device)
     label = torch.zeros(output.size(),dtype=output.dtype,device=device) #이미 no_obj_bbox 세팅 되어있음
@@ -237,7 +238,6 @@ def detection_loss_4_yolo(output, target, device):
     dog_label = target[0,2,4,:]
     human_label = target[0,3,3,:]
     #object is exist
-    non_zero = (target[:, :, :, 0]==1).nonzero()
     '''
     pred_bbox1 : coord_obj의 예측값1
     pred_bbox2 : coord_obj의 예측값2

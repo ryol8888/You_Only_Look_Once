@@ -12,17 +12,15 @@ from PIL import Image, ImageDraw
 num_classes = 1
 
 
-def one_hot(output, label, device):
+def one_hot(output, label,non_zero, device):
 
     label = label.cpu().data.numpy()
     b, s1, s2, c = output.shape
     dst = np.zeros([b, s1, s2, c], dtype=np.float32)
-
-    for k in range(b):
-        for i in range(s1):
-            for j in range(s2):
-
-                dst[k][i][j][int(label[k][i][j])] = 1.
+    size,_ = non_zero.shape
+    non_zero.cpu().data.numpy()
+    for i in range(size):
+        dst[non_zero[i,0]][non_zero[i,1]][non_zero[i,2]][int(label[non_zero[i,0]][non_zero[i,1]][non_zero[i,2]])] = 1.
 
     result = torch.from_numpy(dst)
     if device == 'cpu':
